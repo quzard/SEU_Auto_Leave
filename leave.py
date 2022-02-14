@@ -137,7 +137,7 @@ class Leave(object):
                         "%Y-%m-%d") not in data['QJKSRQ']:
                     print("销假: ", data["QJKSRQ"])
                     post_info = {
-                        "data": {"SQBH": "", "XSBH": 0, "SHZT": "20", "XJFS": "2",
+                        "data": {"SQBH": "", "XSBH": 0, "SHZT": "99", "XJFS": "2",
                                 "XJSJ": "", "XJRQ": "", "SQR": "", "SQRXM": "",
                                 "THZT": "0"}}
                     post_info["data"]["SQBH"] = data["SQBH"]
