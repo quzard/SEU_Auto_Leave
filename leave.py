@@ -7,6 +7,26 @@ from urllib import parse
 
 import execjs
 import requests
+from random import randint
+
+USER_AGENTS = [
+ "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
+ "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Acoo Browser; SLCC1; .NET CLR 2.0.50727; Media Center PC 5.0; .NET CLR 3.0.04506)",
+ "Mozilla/4.0 (compatible; MSIE 7.0; AOL 9.5; AOLBuild 4337.35; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
+ "Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)",
+ "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0; .NET CLR 3.5.30729; .NET CLR 3.0.30729; .NET CLR 2.0.50727; Media Center PC 6.0)",
+ "Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; .NET CLR 1.0.3705; .NET CLR 1.1.4322)",
+ "Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 5.2; .NET CLR 1.1.4322; .NET CLR 2.0.50727; InfoPath.2; .NET CLR 3.0.04506.30)",
+ "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN) AppleWebKit/523.15 (KHTML, like Gecko, Safari/419.3) Arora/0.3 (Change: 287 c9dfb30)",
+ "Mozilla/5.0 (X11; U; Linux; en-US) AppleWebKit/527+ (KHTML, like Gecko, Safari/419.3) Arora/0.6",
+ "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.2pre) Gecko/20070215 K-Ninja/2.1.1",
+ "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9) Gecko/20080705 Firefox/3.0 Kapiko/3.0",
+ "Mozilla/5.0 (X11; Linux i686; U;) Gecko/20070322 Kazehakase/0.4.5",
+ "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.8) Gecko Fedora/1.9.0.8-1.fc10 Kazehakase/0.5.6",
+ "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11",
+ "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.20 (KHTML, like Gecko) Chrome/19.0.1036.7 Safari/535.20",
+ "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52",
+]
 
 class Leave(object):
     def __init__(self, uname, pwd, path):
@@ -68,8 +88,9 @@ class Leave(object):
         c = ""
         for key, value in cookie.items():
             c += key + "=" + value + "; "
+        
         self.header = {'Referer': self.urlBegin + '*default/index.do',
-                  'Cookie': c}
+                      'Cookie': c}
     # 获取之前信息
     def get_info(self):
         personal_info_url = self.urlBegin + 'modules/wdqj/wdqjbg.do'
@@ -225,7 +246,18 @@ class Leave(object):
             print("获取信息失败!")
             return "获取信息失败!"
 
-        raw_personal_info = json.loads(get_personal_info.text)['datas']['wdqjbg']['rows'][0]
+        infos = json.loads(get_personal_info.text)['datas']['wdqjbg']['rows']
+        if len(infos) == 0:
+            print("之前没有上报!")
+            return "之前没有上报!"
+        raw_personal_info = []
+        for info in infos:
+            if info['DZQJSY_DISPLAY'] == "因事出校（当天往返）" or  info['DZQJSY_DISPLAY'] == "离校（短期科研实验）" or info['DZQJSY_DISPLAY'] == "就业出校（当天往返）":
+                raw_personal_info = info
+                break
+        if len(raw_personal_info) == 0:
+            print("之前没有上报!")
+            return "之前没有上报!"
         raw_personal_info = self.get_info_2(raw_personal_info["SQBH"])
 
         datas = {"QJLX_DISPLAY": "不涉及职能部门", "QJLX": "3bc0d68330fd4d869152238251b867ee", "DZQJSY_DISPLAY": "因事出校（当天往返）",
@@ -261,7 +293,11 @@ class Leave(object):
         self.header['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8'
         FormData = {'data': post_info}
         data = parse.urlencode(FormData)
-        save = self.sess.post(save_url, data=data, headers=self.header)
+        try:
+            save = self.sess.post(save_url, data=data, headers=self.header)
+        except:
+            print("上报超时!")
+            return "上报超时!"
 
         if "成功" in save.text:
             print('请假成功!')
@@ -273,6 +309,16 @@ class Leave(object):
 
     def do_report(self):
         self.sess = requests.session()
+        random_agent = USER_AGENTS[randint(0, len(USER_AGENTS)-1)]    
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+            'DNT': '1',
+            'Proxy-Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': random_agent,
+        }
+        self.sess.headers = headers
 
         if self.login() == "登陆失败!":
             return "登陆失败!"
