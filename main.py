@@ -19,7 +19,7 @@ else:
 
 if __name__ == '__main__':
     try:
-        #sleep(random.uniform(5, 15))
+        sleep(random.uniform(5, 15))
         leave = Leave(username, password, "./")
         res = leave.do_report()
         print(res)
