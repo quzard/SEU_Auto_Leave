@@ -54,7 +54,7 @@ class Leave(object):
         lt = re.search('name="lt" value="(.*?)"', get_login.text).group(1)
         salt = re.search('id="pwdDefaultEncryptSalt" value="(.*?)"', get_login.text).group(1)
         execution = re.search('name="execution" value="(.*?)"', get_login.text).group(1)
-
+        print(get_login.text)
         f = open(self.path + "/encrypt.js", 'r', encoding='UTF-8')
         line = f.readline()
         js = ''
